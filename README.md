@@ -7,7 +7,8 @@ A small WinUI 3 time tracker: how long you spent on screen, split by hour or day
 | Section | What you get | Built from |
 |---|---|---|
 | Time Track (Day / Week) | Hourly / daily bar chart, total or daily average, date navigation | `SelectorBar`, `ItemsControl` |
-| Timeline (Day only) | One horizontal line per app. Solid = app in front, light = open in the background. Overlapping apps show up on separate lines | `Canvas` + `Rectangle`s |
+| Day buttons | Click a day (Today, Yesterday, ...) to see what you were doing then. In the Week view they open that day | `Button` row |
+| Timeline (Day only) | One horizontal line per app. Solid = app in front, light = open in the background. Overlapping apps show up on separate lines, with a separator after the app names | `Canvas` + `Rectangle`s |
 | Hover card | Hover a lane to see the exact time under the cursor, plus the start, end and length of the bar you're on | a `Border` on a `Canvas` overlay |
 | Resizable names | Drag the divider between the app names and the lanes to fit long names | a custom `ResizeHandle` strip |
 | Settings (left pane) | 24-hour or 12-hour time. Defaults to your system's clock format | `NavigationView` + `ToggleSwitch` |

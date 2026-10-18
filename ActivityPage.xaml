@@ -28,6 +28,9 @@
                         <SelectorBarItem x:Name="WeekItem" Text="Week" />
                     </SelectorBar>
 
+                    <!-- Clickable days (filled in from code): pick yesterday, the day before, etc. -->
+                    <Grid x:Name="DayStrip" ColumnSpacing="4" />
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -76,7 +79,11 @@
                                 <local:ResizeHandle x:Name="Handle" Width="10" HorizontalAlignment="Left" VerticalAlignment="Stretch"
                                                     Margin="171,0,0,0" Background="Transparent"
                                                     PointerPressed="OnHandleDown" PointerMoved="OnHandleMove"
-                                                    PointerReleased="OnHandleUp" PointerCanceled="OnHandleUp" />
+                                                    PointerReleased="OnHandleUp" PointerCanceled="OnHandleUp">
+                                    <!-- The visible separator between the app names and the lanes -->
+                                    <Rectangle Width="1" HorizontalAlignment="Center" IsHitTestVisible="False"
+                                               Fill="{StaticResource LineBrush}" />
+                                </local:ResizeHandle>
                             </Grid>
 
                             <TextBlock x:Name="LaneHint" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" TextWrapping="Wrap" />

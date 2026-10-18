@@ -34,6 +34,9 @@ public sealed partial class ActivityPage : Page
     bool _dragging;
     double _dragStartX, _dragStartWidth;
 
+    bool _suppressRange;      // true while we change Day/Week from code, so OnRange doesn't reset the date
+    string _stripKey = "";    // what the day buttons currently show; they're only rebuilt when this changes
+
     // Bar chart pieces, rebuilt only when the number of bars changes (24 hours <-> 7 days).
     Border[] _bars = Array.Empty<Border>();
     TextBlock?[] _barLabels = Array.Empty<TextBlock?>();
@@ -52,7 +55,7 @@ public sealed partial class ActivityPage : Page
 
     void OnRange(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
     {
-        if (!IsLoaded) return;
+        if (!IsLoaded || _suppressRange) return;
         _week = sender.SelectedItem == WeekItem;
         _offset = 0;
         Refresh();
@@ -60,6 +63,69 @@ public sealed partial class ActivityPage : Page
 
     void OnPrev(object sender, RoutedEventArgs e) { _offset--; Refresh(); }
     void OnNext(object sender, RoutedEventArgs e) { _offset++; Refresh(); }
+
+    // ---- day buttons: click a day to see what you were doing then ------------------------
+
+    /// <summary>Jump to a single day. From the Week view this also switches to the Day view.</summary>
+    void SelectDay(DateOnly day)
+    {
+        _offset = day.DayNumber - DateOnly.FromDateTime(DateTime.Now).DayNumber;
+        if (_week)
+        {
+            _week = false;
+            _suppressRange = true;
+            Range.SelectedItem = DayItem;
+            _suppressRange = false;
+        }
+        Refresh();
+    }
+
+    // Day view: the 7 days ending today (or, if you've gone further back, the 7 days starting at the selected one).
+    // Week view: the 7 days of the shown week; clicking one opens that day.
+    void UpdateDayStrip(DateOnly today, DateOnly first)
+    {
+        DateOnly start;
+        DateOnly? selected = null;
+        if (_week) start = first;
+        else
+        {
+            var sel = today.AddDays(_offset);
+            selected = sel;
+            start = (_offset >= -6 ? today : sel.AddDays(6)).AddDays(-6);
+        }
+
+        string key = $"{start.DayNumber}|{selected?.DayNumber}|{today.DayNumber}|{_week}";
+        if (key == _stripKey) return;   // Refresh runs every second; rebuilding would swallow clicks
+        _stripKey = key;
+
+        DayStrip.Children.Clear();
+        DayStrip.ColumnDefinitions.Clear();
+        for (int i = 0; i < 7; i++)
+        {
+            var day = start.AddDays(i);
+            DayStrip.ColumnDefinitions.Add(new ColumnDefinition());   // equal widths
+
+            var name = new TextBlock
+            {
+                Text = day == today ? "Today" : day == today.AddDays(-1) ? "Yesterday" : day.ToString("ddd"),
+                FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center,
+            };
+            var date = new TextBlock { Text = day.ToString("d MMM"), FontSize = 11, Opacity = 0.7, HorizontalAlignment = HorizontalAlignment.Center };
+
+            var button = new Button
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Padding = new Thickness(4, 8, 4, 8),
+                IsEnabled = day <= today,   // can't open the future
+                Content = new StackPanel { Spacing = 2, Children = { name, date } },
+            };
+            if (day == selected) button.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
+            button.Click += (_, _) => SelectDay(day);
+
+            Grid.SetColumn(button, i);
+            DayStrip.Children.Add(button);
+        }
+    }
 
     static DateOnly Monday(DateOnly d) => d.AddDays(-(((int)d.DayOfWeek + 6) % 7));
 
@@ -70,6 +136,7 @@ public sealed partial class ActivityPage : Page
         var days = Enumerable.Range(0, _week ? 7 : 1).Select(i => _t.Get(first.AddDays(i))).ToList();
         int elapsed = Math.Max(1, Enumerable.Range(0, days.Count).Count(i => first.AddDays(i) <= today));
 
+        UpdateDayStrip(today, first);
         Next.IsEnabled = _offset < 0;
         DateText.Text = _week
             ? $"{first:MMM d} – {first.AddDays(6):MMM d}"
