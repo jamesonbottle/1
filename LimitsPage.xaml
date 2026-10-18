@@ -1,0 +1,51 @@
+<Page
+    x:Class="ScreenTime.LimitsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ScreenTime">
+
+    <ScrollViewer>
+        <StackPanel Padding="32,16" Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
+            <TextBlock Text="App Limits" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock TextWrapping="Wrap" Opacity="0.8"
+                       Text="Set a daily time limit for an app. You get a notification with 5 minutes left, and the app is closed when time is up." />
+            <Button Content="Add Limit" Style="{StaticResource AccentButtonStyle}" Click="OnAdd" />
+
+            <ItemsControl x:Name="List">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:LimitRow">
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                                CornerRadius="12" Padding="16" Margin="0,0,0,8">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="32" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="{x:Bind Icon}" Width="32" Height="32" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Name}" />
+                                    <TextBlock Text="{x:Bind Detail}" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                                </StackPanel>
+                                <Button Grid.Column="2" Content="Ignore for today" Tag="{x:Bind Key}"
+                                        IsEnabled="{x:Bind CanIgnore}" Click="OnIgnore" />
+                                <Button Grid.Column="3" Content="Remove" Tag="{x:Bind Key}" Click="OnRemove" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ContentDialog x:Name="AddDialog" Title="Add Limit" PrimaryButtonText="Add"
+                           CloseButtonText="Cancel" DefaultButton="Primary">
+                <StackPanel Spacing="12">
+                    <ComboBox x:Name="AppPick" Header="App" DisplayMemberPath="Name" HorizontalAlignment="Stretch" />
+                    <NumberBox x:Name="Minutes" Header="Minutes per day" Value="60" Minimum="1"
+                               SpinButtonPlacementMode="Inline" />
+                </StackPanel>
+            </ContentDialog>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

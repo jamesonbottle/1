@@ -1,0 +1,34 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            platform: x64
+          - rid: win-arm64
+            platform: ARM64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # Unpackaged + self-contained: the output folder runs on any Windows 10 1809+ machine, no installs needed.
+      - name: Publish
+        run: dotnet publish ScreenTime.csproj -c Release -r ${{ matrix.rid }} -p:Platform=${{ matrix.platform }} -o publish/${{ matrix.rid }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScreenTime-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}

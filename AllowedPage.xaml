@@ -1,0 +1,31 @@
+<Page
+    x:Class="ScreenTime.AllowedPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ScreenTime">
+
+    <ScrollViewer>
+        <StackPanel Padding="32,16" Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
+            <TextBlock Text="Always Allowed" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock TextWrapping="Wrap" Opacity="0.8"
+                       Text="Apps that stay available during downtime. Apps appear here once you've used them." />
+
+            <ItemsControl x:Name="List">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:AllowedRow">
+                        <Grid ColumnSpacing="12" Padding="0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Image Source="{x:Bind Icon}" Width="32" Height="32" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind Name}" VerticalAlignment="Center" />
+                            <ToggleSwitch Grid.Column="2" IsOn="{x:Bind On, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="0" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
