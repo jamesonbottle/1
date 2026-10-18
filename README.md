@@ -8,8 +8,9 @@ A small WinUI 3 time tracker: how long you spent on screen, split by hour or day
 |---|---|---|
 | Time Track (Day / Week) | Hourly / daily bar chart, total or daily average, date navigation | `SelectorBar`, `ItemsControl` |
 | Timeline (Day only) | One horizontal line per app. Solid = app in front, light = open in the background. Overlapping apps show up on separate lines | `Canvas` + `Rectangle`s |
-| Pickups | Counted when you return from 5+ min of no input | `GetLastInputInfo` |
-| Most Used | Top 10 apps with real exe icons | `StorageFile.GetThumbnailAsync` (the Explorer icon) |
+| Hover card | Hover a lane to see the exact time under the cursor, plus the start, end and length of the bar you're on | a `Border` on a `Canvas` overlay |
+| Resizable names | Drag the divider between the app names and the lanes to fit long names | a custom `ResizeHandle` strip |
+| Settings (gear button) | 24-hour or 12-hour time. Defaults to your system's clock format | `Flyout` + `ToggleSwitch` |
 
 Windows has no public screen-time API, so usage comes from sampling:
 
@@ -18,7 +19,7 @@ Windows has no public screen-time API, so usage comes from sampling:
 
 Nothing is recorded while there has been no input for 5+ minutes.
 
-Data lives in `%LOCALAPPDATA%\ScreenTime`: `settings.json` (app names and icon paths) plus one `yyyy-MM-dd.json` per day. Any error is appended to `crash.log` in the same folder.
+Data lives in `%LOCALAPPDATA%\ScreenTime`: `settings.json` (app names, icon paths, the 24-hour setting and the name column width) plus one `yyyy-MM-dd.json` per day. Any error is appended to `crash.log` in the same folder.
 
 Days recorded before the timeline existed only have the hourly totals, so their timeline is empty.
 
@@ -46,6 +47,6 @@ CsWin32 is a build-time source generator only; it adds nothing to what the end u
 
 ## Not in this version
 
-- Downtime, App Limits and Always Allowed (removed; this build only tracks and displays time)
+- Downtime, App Limits, Always Allowed, Most Used and Pickups (removed; this build only tracks and displays time)
 - Packaged-app (UWP) apps all show as "ApplicationFrameHost" and are not tracked
 - Tray icon / run at startup

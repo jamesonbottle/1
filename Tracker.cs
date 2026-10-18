@@ -33,7 +33,6 @@ public sealed class Tracker
 
     readonly Dictionary<DateOnly, DayData> _past = new();
     DateOnly _day = DateOnly.FromDateTime(DateTime.Now);
-    bool _wasIdle = true;
     int _ticks;
 
     public Settings Settings { get; }
@@ -91,8 +90,6 @@ public sealed class Tracker
 
         int sec = (int)now.TimeOfDay.TotalSeconds;
         bool idle = IdleTime() >= IdleLimit;
-        if (_wasIdle && !idle) Today.Pickups++;   // coming back from idle = a "pickup"
-        _wasIdle = idle;
 
         if (!idle)
         {
