@@ -9,5 +9,23 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <local:ActivityPage />
+    <!-- Same structure as the Windows 11 Settings and Store apps: the title bar is merged into the window over
+         Mica, and the content sits on the lighter "layer on Mica" surface with rounded top corners. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TitleBar x:Name="AppTitleBar" Title="Screen Time"
+                  IsBackButtonVisible="False" IsPaneToggleButtonVisible="False" />
+
+        <Border Grid.Row="1"
+                Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1,1,1,0"
+                CornerRadius="8,8,0,0">
+            <local:ActivityPage />
+        </Border>
+    </Grid>
 </Window>
