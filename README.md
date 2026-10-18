@@ -18,15 +18,27 @@ Windows has no public screen-time API, so usage comes from sampling the foregrou
 
 Data lives in `%LOCALAPPDATA%\ScreenTime`: `settings.json` plus one `yyyy-MM-dd.json` per day.
 
-## Run
+## Install (nothing to install)
 
-Requires Windows 10 1809+ / Windows 11 and the .NET 8 SDK (or Visual Studio 2022 with the WinUI workload).
+Needs only Windows 10 1809+ or Windows 11. The .NET runtime and Windows App SDK are bundled, and the app is unpackaged (no MSIX, no certificate, no Store).
+
+1. Download `ScreenTime-win-x64.zip` (or `win-arm64`) from the **Releases** page, or from the latest **Actions** run's artifacts.
+2. Unzip anywhere.
+3. Run `ScreenTime.exe`.
+
+The window must stay open (or minimized) for tracking.
+
+To cut a release, push a tag: `git tag v1.0 && git push origin v1.0`.
+
+## Build from source
+
+Needs the .NET 8 SDK (or Visual Studio 2022 with the WinUI workload):
 
 ```
 dotnet run -r win-x64
 ```
 
-Or open the folder in Visual Studio and press F5. The window must stay open (or minimized) for tracking.
+CsWin32 is a build-time source generator only; it adds nothing to what the end user needs.
 
 ## Not in this version
 
