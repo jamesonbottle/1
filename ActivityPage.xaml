@@ -12,11 +12,15 @@
             <Setter Property="CornerRadius" Value="12" />
             <Setter Property="Padding" Value="16" />
         </Style>
+
+        <!-- Used from code-behind when drawing the timeline lanes -->
+        <SolidColorBrush x:Key="LaneBrush" Color="{ThemeResource SystemAccentColor}" />
+        <SolidColorBrush x:Key="LineBrush" Color="{ThemeResource TextFillColorSecondary}" Opacity="0.35" />
     </Page.Resources>
 
     <ScrollViewer>
-        <StackPanel Padding="32,16" Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
-            <TextBlock Text="All Activity" Style="{StaticResource TitleTextBlockStyle}" />
+        <StackPanel Padding="32,16" Spacing="16" MaxWidth="900" HorizontalAlignment="Left">
+            <TextBlock Text="Time Track" Style="{StaticResource TitleTextBlockStyle}" />
 
             <SelectorBar x:Name="Range" HorizontalAlignment="Left" SelectionChanged="OnRange">
                 <SelectorBarItem x:Name="DayItem" Text="Day" IsSelected="True" />
@@ -59,6 +63,27 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock x:Name="PeakText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                </StackPanel>
+            </Border>
+
+            <!-- Timeline: one horizontal lane per app (Day view only) -->
+            <Border x:Name="TimelineCard" Style="{StaticResource Card}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="TIMELINE" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                    <Grid x:Name="Axis" Margin="182,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="12a" FontSize="11" Opacity="0.7" />
+                        <TextBlock Grid.Column="1" Text="6a" FontSize="11" Opacity="0.7" />
+                        <TextBlock Grid.Column="2" Text="12p" FontSize="11" Opacity="0.7" />
+                        <TextBlock Grid.Column="3" Text="6p" FontSize="11" Opacity="0.7" />
+                    </Grid>
+                    <StackPanel x:Name="Lanes" Spacing="4" />
+                    <TextBlock x:Name="LaneHint" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
                 </StackPanel>
             </Border>
 

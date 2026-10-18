@@ -2,29 +2,12 @@
     x:Class="ScreenTime.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ScreenTime"
     Title="Screen Time">
 
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <NavigationView x:Name="Nav" PaneDisplayMode="Left" IsBackButtonVisible="Collapsed" IsSettingsVisible="False"
-                    OpenPaneLength="220" SelectionChanged="OnNav">
-        <NavigationView.MenuItems>
-            <NavigationViewItem Content="All Activity" Tag="ScreenTime.ActivityPage">
-                <NavigationViewItem.Icon><SymbolIcon Symbol="Calendar" /></NavigationViewItem.Icon>
-            </NavigationViewItem>
-            <NavigationViewItem Content="Downtime" Tag="ScreenTime.DowntimePage">
-                <NavigationViewItem.Icon><FontIcon Glyph="&#xE708;" /></NavigationViewItem.Icon>
-            </NavigationViewItem>
-            <NavigationViewItem Content="App Limits" Tag="ScreenTime.LimitsPage">
-                <NavigationViewItem.Icon><SymbolIcon Symbol="Clock" /></NavigationViewItem.Icon>
-            </NavigationViewItem>
-            <NavigationViewItem Content="Always Allowed" Tag="ScreenTime.AllowedPage">
-                <NavigationViewItem.Icon><SymbolIcon Symbol="Accept" /></NavigationViewItem.Icon>
-            </NavigationViewItem>
-        </NavigationView.MenuItems>
-
-        <Frame x:Name="Host" />
-    </NavigationView>
+    <local:ActivityPage />
 </Window>

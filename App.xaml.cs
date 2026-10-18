@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using Microsoft.Windows.AppNotifications;
 
 namespace ScreenTime;
 
@@ -9,7 +8,6 @@ public partial class App : Application
     {
         InitializeComponent();
         UnhandledException += (_, e) => Diag.Log(e.Exception);   // so a crash leaves a trace
-        try { AppNotificationManager.Default.Register(); } catch (Exception ex) { Diag.Log(ex); }   // lets us show toasts
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)

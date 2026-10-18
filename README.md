@@ -1,22 +1,26 @@
 # ScreenTime for Windows
 
-A WinUI 3 take on iOS Screen Time: activity charts, pickups, most-used apps, Downtime, App Limits and Always Allowed.
+A small WinUI 3 time tracker: how long you spent on screen, split by hour or day, with a timeline that gives every app its own horizontal lane so you can see which apps were open at the same time.
 
-## iOS feature -> what it uses here
+## What it shows
 
-| iOS Screen Time | Here | Built from |
+| Section | What you get | Built from |
 |---|---|---|
-| All Activity (Day / Week) | Hourly / daily bar chart, total or daily average, date navigation | `SelectorBar`, `ItemsControl`, `ProgressBar` |
-| Most Used | Top 10 apps with real exe icons | `StorageFile.GetThumbnailAsync` (the Explorer icon) |
+| Time Track (Day / Week) | Hourly / daily bar chart, total or daily average, date navigation | `SelectorBar`, `ItemsControl` |
+| Timeline (Day only) | One horizontal line per app. Solid = app in front, light = open in the background. Overlapping apps show up on separate lines | `Canvas` + `Rectangle`s |
 | Pickups | Counted when you return from 5+ min of no input | `GetLastInputInfo` |
-| Downtime | Schedule (overnight ok); non-allowed apps are closed | `ToggleSwitch`, `TimePicker` |
-| App Limits | Daily minutes per app, 5-minute warning, close at limit, "Ignore for today" | `ContentDialog`, `NumberBox`, `AppNotificationManager` toasts |
-| Always Allowed | Apps exempt from Downtime | `ToggleSwitch` |
-| Navigation | Left pane | `NavigationView` + `Frame` |
+| Most Used | Top 10 apps with real exe icons | `StorageFile.GetThumbnailAsync` (the Explorer icon) |
 
-Windows has no public screen-time API, so usage comes from sampling the foreground window once a second (`GetForegroundWindow` through the CsWin32 source generator, so no hand-written P/Invoke).
+Windows has no public screen-time API, so usage comes from sampling:
 
-Data lives in `%LOCALAPPDATA%\ScreenTime`: `settings.json` plus one `yyyy-MM-dd.json` per day. Any error is appended to `crash.log` in the same folder.
+- once a second, the foreground window (`GetForegroundWindow` through the CsWin32 source generator) gives screen time and the solid timeline bars;
+- every 5 seconds, every process with a visible window counts as "open", which gives the light bars. Minimized windows count as open.
+
+Nothing is recorded while there has been no input for 5+ minutes.
+
+Data lives in `%LOCALAPPDATA%\ScreenTime`: `settings.json` (app names and icon paths) plus one `yyyy-MM-dd.json` per day. Any error is appended to `crash.log` in the same folder.
+
+Days recorded before the timeline existed only have the hourly totals, so their timeline is empty.
 
 ## Install (nothing to install)
 
@@ -42,7 +46,6 @@ CsWin32 is a build-time source generator only; it adds nothing to what the end u
 
 ## Not in this version
 
-- Notification counts, app categories, Communication Limits, Content & Privacy restrictions, multi-device sync, Screen Time passcode
-- Packaged-app (UWP) apps all show as "ApplicationFrameHost" and are not tracked or limited
-- Enforcement is a polite close (`CloseMainWindow`) of the foreground app; a determined user can quit this app or use Task Manager
+- Downtime, App Limits and Always Allowed (removed; this build only tracks and displays time)
+- Packaged-app (UWP) apps all show as "ApplicationFrameHost" and are not tracked
 - Tray icon / run at startup

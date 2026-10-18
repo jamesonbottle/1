@@ -2,23 +2,25 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.UI.Xaml;
-using Microsoft.Windows.AppNotifications;
-using Microsoft.Windows.AppNotifications.Builder;
 using Windows.Win32;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 
 namespace ScreenTime;
 
-/// <summary>Samples the foreground app once a second, stores usage per hour, and enforces limits / downtime.</summary>
+/// <summary>
+/// Samples the foreground app once a second (screen time) and, every few seconds, which apps have a window open
+/// (so the timeline can show overlapping apps on separate lanes).
+/// </summary>
 public sealed class Tracker
 {
     static readonly TimeSpan IdleLimit = TimeSpan.FromMinutes(5);   // no input for this long = screen not in use
+    const int OpenSampleEvery = 5;                                   // seconds between "which windows are open" scans
     static readonly string Dir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ScreenTime");
     static readonly string SettingsFile = Path.Combine(Dir, "settings.json");
     static string DayFile(DateOnly d) => Path.Combine(Dir, $"{d:yyyy-MM-dd}.json");
 
-    // Shell / system processes: never counted, never closed.
+    // Shell / system processes: never counted.
     static readonly HashSet<string> Protected = new(StringComparer.OrdinalIgnoreCase)
     {
         "explorer", "ShellExperienceHost", "StartMenuExperienceHost", "SearchHost", "LockApp",
@@ -30,7 +32,6 @@ public sealed class Tracker
     public static Tracker Instance { get; } = new();
 
     readonly Dictionary<DateOnly, DayData> _past = new();
-    readonly HashSet<string> _notified = new();
     DateOnly _day = DateOnly.FromDateTime(DateTime.Now);
     bool _wasIdle = true;
     int _ticks;
@@ -67,12 +68,6 @@ public sealed class Tracker
         File.WriteAllText(DayFile(_day), JsonSerializer.Serialize(Today));
     }
 
-    public bool InDowntime(TimeSpan t) =>
-        Settings.DowntimeEnabled &&
-        (Settings.DowntimeStart <= Settings.DowntimeEnd
-            ? t >= Settings.DowntimeStart && t < Settings.DowntimeEnd
-            : t >= Settings.DowntimeStart || t < Settings.DowntimeEnd);   // overnight, e.g. 22:00 -> 07:00
-
     // ---- the one-second loop ----------------------------------------------------------
 
     // A bad sample (process exited mid-read, access denied...) must never take the app down.
@@ -92,9 +87,9 @@ public sealed class Tracker
             _past[_day] = Today;
             _day = date;
             Today = new();
-            _notified.Clear();
         }
 
+        int sec = (int)now.TimeOfDay.TotalSeconds;
         bool idle = IdleTime() >= IdleLimit;
         if (_wasIdle && !idle) Today.Pickups++;   // coming back from idle = a "pickup"
         _wasIdle = idle;
@@ -108,35 +103,41 @@ public sealed class Tracker
                 Learn(p, key);
                 if (!Today.Apps.TryGetValue(key, out var hours)) Today.Apps[key] = hours = new int[24];
                 hours[now.Hour]++;
-                Enforce(p, key, now);
+                Mark(Today.Focus, key, sec, 1, 2);
+                Mark(Today.Open, key, sec, 1, 2);   // the front app is open by definition
             }
+
+            if (_ticks % OpenSampleEvery == 0) SampleOpenApps(sec);
         }
 
         if (++_ticks % 30 == 0) Save();
         Changed?.Invoke();
     }
 
-    void Enforce(Process p, string key, DateTime now)
+    /// <summary>Extends the app's last span if this sample continues it, otherwise starts a new span.</summary>
+    static void Mark(Dictionary<string, List<int[]>> spans, string key, int sec, int width, int tolerance)
     {
-        var name = Ui.Name(key);
+        if (!spans.TryGetValue(key, out var list)) spans[key] = list = new();
+        int end = Math.Min(86400, sec + width);
+        if (list.Count > 0 && sec - list[^1][1] <= tolerance) list[^1][1] = Math.Max(list[^1][1], end);
+        else list.Add(new[] { sec, end });
+    }
 
-        if (InDowntime(now.TimeOfDay) && !Settings.Allowed.Contains(key))
+    // Every app with a visible top-level window counts as open (minimized windows included).
+    void SampleOpenApps(int sec)
+    {
+        foreach (var p in Process.GetProcesses())
         {
-            p.CloseMainWindow();
-            if (_notified.Add("dt:" + key)) Notify("Downtime", $"{name} isn't available during downtime.");
-            return;
-        }
-
-        var limit = Settings.Limits.FirstOrDefault(l => l.App == key);
-        if (limit is null || Today.Ignored.Contains(key)) return;
-
-        int left = limit.Minutes * 60 - Today.Seconds(key);
-        if (left > 0 && left <= 300 && _notified.Add("5:" + key))
-            Notify("App Limit", $"{name} has 5 minutes left today.");
-        if (left <= 0)
-        {
-            p.CloseMainWindow();
-            if (_notified.Add("0:" + key)) Notify("Time Limit", $"You've reached your limit for {name}.");
+            try
+            {
+                if (p.MainWindowHandle == IntPtr.Zero || p.MainWindowTitle.Length == 0) continue;
+                var key = p.ProcessName;
+                if (Protected.Contains(key)) continue;
+                Learn(p, key);
+                Mark(Today.Open, key, sec, OpenSampleEvery, OpenSampleEvery + 1);
+            }
+            catch { /* exited or access denied */ }
+            finally { p.Dispose(); }
         }
     }
 
@@ -169,12 +170,6 @@ public sealed class Tracker
         }
         catch { }
         Settings.Apps[key] = new() { Name = string.IsNullOrWhiteSpace(name) ? key : name.Trim(), Path = path };
-    }
-
-    static void Notify(string title, string text)
-    {
-        try { AppNotificationManager.Default.Show(new AppNotificationBuilder().AddText(title).AddText(text).BuildNotification()); }
-        catch { }
     }
 
     static T? Read<T>(string path)
