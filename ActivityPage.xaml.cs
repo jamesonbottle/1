@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Shapes;
 using Windows.Foundation;
 
@@ -17,6 +18,7 @@ public sealed class ResizeHandle : Grid
 
 public sealed partial class ActivityPage : Page
 {
+    const double ChartHeight = 140;
     const double LaneHeight = 28, BarHeight = 12;
     const double LaneGap = 12;                 // spacing between the name column and the lanes
     const double MinLabelWidth = 90;
@@ -32,13 +34,17 @@ public sealed partial class ActivityPage : Page
     bool _dragging;
     double _dragStartX, _dragStartWidth;
 
+    // Bar chart pieces, rebuilt only when the number of bars changes (24 hours <-> 7 days).
+    Border[] _bars = Array.Empty<Border>();
+    TextBlock?[] _barLabels = Array.Empty<TextBlock?>();
+
     sealed record Lane(string Key, Canvas Canvas, Grid Row);
 
     public ActivityPage()
     {
         InitializeComponent();
+        NavigationCacheMode = NavigationCacheMode.Required;   // keep Day/Week and the date when switching to Settings and back
         _labelWidth = Math.Max(MinLabelWidth, _t.Settings.LabelWidth);
-        Hour24Toggle.IsOn = _t.Settings.Use24Hour;   // IsLoaded is still false, so OnHour24 ignores this
         ApplyLabelWidth();
         Loaded += (_, _) => { _t.Changed += Refresh; Refresh(); };
         Unloaded += (_, _) => _t.Changed -= Refresh;
@@ -54,13 +60,6 @@ public sealed partial class ActivityPage : Page
 
     void OnPrev(object sender, RoutedEventArgs e) { _offset--; Refresh(); }
     void OnNext(object sender, RoutedEventArgs e) { _offset++; Refresh(); }
-
-    void OnHour24(object sender, RoutedEventArgs e)
-    {
-        if (!IsLoaded) return;
-        _t.Settings.Use24Hour = Hour24Toggle.IsOn;
-        Refresh();
-    }
 
     static DateOnly Monday(DateOnly d) => d.AddDays(-(((int)d.DayOfWeek + 6) % 7));
 
@@ -87,15 +86,64 @@ public sealed partial class ActivityPage : Page
         // Bar chart: 24 hours for Day, 7 days for Week.
         var values = _week ? days.Select(d => d.Total).ToArray() : days[0].ByHour();
         int max = Math.Max(1, values.Max());
-        Chart.ItemsSource = values.Select((v, i) => new Bar(
-            v == 0 ? 0 : Math.Max(3, 140.0 * v / max),
-            _week ? 60 : 22,
-            _week ? first.AddDays(i).ToString("ddd") : i % 6 == 0 ? hourLabels[i / 6] : "")).ToList();
+        EnsureChart(values.Length);
+        for (int i = 0; i < values.Length; i++)
+        {
+            _bars[i].Height = values[i] == 0 ? 0 : Math.Max(3, ChartHeight * values[i] / max);
+            if (_barLabels[i] is { } label)
+                label.Text = _week ? first.AddDays(i).ToString("ddd") : hourLabels[i / 6];
+        }
         PeakText.Text = values.Max() > 0 ? $"Peak {Ui.Time(values.Max())}" : "";
 
         // Timeline lanes only make sense for a single day.
         TimelineCard.Visibility = _week ? Visibility.Collapsed : Visibility.Visible;
         if (!_week) UpdateLanes(days[0]);
+    }
+
+    // ---- bar chart: equal-width columns, so it scales with the window instead of overflowing ----
+
+    void EnsureChart(int n)
+    {
+        if (_bars.Length == n) return;
+
+        Chart.Children.Clear();
+        Chart.ColumnDefinitions.Clear();
+        Chart.RowDefinitions.Clear();
+        Chart.RowDefinitions.Add(new RowDefinition { Height = new GridLength(ChartHeight) });   // bars
+        Chart.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });               // labels
+
+        var fill = (Brush)Resources["LaneBrush"];
+        _bars = new Border[n];
+        _barLabels = new TextBlock?[n];
+        for (int i = 0; i < n; i++)
+        {
+            Chart.ColumnDefinitions.Add(new ColumnDefinition());   // default width is 1*, so all columns are equal
+
+            var bar = new Border
+            {
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(1, 0, 1, 0),
+                CornerRadius = new CornerRadius(3, 3, 0, 0),
+                Background = fill,
+            };
+            Grid.SetColumn(bar, i);
+            Chart.Children.Add(bar);
+            _bars[i] = bar;
+
+            // Week: a label under every bar. Day: a label every 6 hours, spanning 6 columns so wide text like "18:00" fits.
+            bool labelled = n <= 7 || i % 6 == 0;
+            if (!labelled) continue;
+            var label = new TextBlock
+            {
+                FontSize = 11, Opacity = 0.7, TextWrapping = TextWrapping.NoWrap,
+                HorizontalAlignment = n <= 7 ? HorizontalAlignment.Center : HorizontalAlignment.Left,
+            };
+            Grid.SetRow(label, 1);
+            Grid.SetColumn(label, i);
+            if (n > 7) Grid.SetColumnSpan(label, 6);
+            Chart.Children.Add(label);
+            _barLabels[i] = label;
+        }
     }
 
     // ---- timeline: one horizontal lane per app ------------------------------------------

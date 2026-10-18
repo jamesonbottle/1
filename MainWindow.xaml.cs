@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Windows.Graphics;
 
 namespace ScreenTime;
@@ -10,7 +11,16 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;   // draw into the title bar area, like Settings and Store
         SetTitleBar(AppTitleBar);
-        AppWindow.Resize(new SizeInt32 { Width = 1000, Height = 800 });
+        AppWindow.Resize(new SizeInt32 { Width = 1100, Height = 800 });
         Closed += (_, _) => { try { Tracker.Instance.Save(); } catch (Exception ex) { Diag.Log(ex); } };
+
+        // Select the first page from code, once every named element exists (IsSelected in XAML can fire too early).
+        Nav.SelectedItem = Nav.MenuItems[0];
+    }
+
+    void OnNav(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (Host is null) return;
+        Host.Navigate(args.IsSettingsSelected ? typeof(SettingsPage) : typeof(ActivityPage));
     }
 }

@@ -5,113 +5,85 @@
     xmlns:local="using:ScreenTime">
 
     <Page.Resources>
-        <Style x:Key="Card" TargetType="Border">
-            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
-            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="Padding" Value="16" />
-        </Style>
-
-        <!-- Used from code-behind when drawing the timeline lanes -->
+        <!-- Used from code-behind when drawing the chart and the timeline lanes -->
         <SolidColorBrush x:Key="LaneBrush" Color="{ThemeResource SystemAccentColor}" />
         <SolidColorBrush x:Key="LineBrush" Color="{ThemeResource TextFillColorSecondary}" Opacity="0.35" />
     </Page.Resources>
 
     <Grid>
         <ScrollViewer>
-            <StackPanel Padding="32,16" Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
-                <TextBlock Text="Time Track" Style="{StaticResource TitleTextBlockStyle}" />
+            <!-- Left-aligned and filling the window up to a maximum width. (Stretch + MaxWidth would center the
+                 content and make it shift sideways while the window is resized.) -->
+            <Grid Padding="32,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MaxWidth="1100" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                <Grid>
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Time Track" Style="{StaticResource TitleTextBlockStyle}" />
+
                     <SelectorBar x:Name="Range" HorizontalAlignment="Left" SelectionChanged="OnRange">
                         <SelectorBarItem x:Name="DayItem" Text="Day" IsSelected="True" />
                         <SelectorBarItem x:Name="WeekItem" Text="Week" />
                     </SelectorBar>
 
-                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="&#xE713;"
-                            FontFamily="{StaticResource SymbolThemeFontFamily}" ToolTipService.ToolTip="Settings">
-                        <Button.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedRight">
-                                <ToggleSwitch x:Name="Hour24Toggle" Header="24-hour time" OnContent="On" OffContent="Off"
-                                              Toggled="OnHour24" />
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
-                </Grid>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="Prev" Content="&#xE76B;" FontFamily="{StaticResource SymbolThemeFontFamily}" Click="OnPrev" />
+                        <TextBlock x:Name="DateText" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <Button x:Name="Next" Grid.Column="2" Content="&#xE76C;" FontFamily="{StaticResource SymbolThemeFontFamily}" Click="OnNext" />
+                    </Grid>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Button x:Name="Prev" Content="&#xE76B;" FontFamily="{StaticResource SymbolThemeFontFamily}" Click="OnPrev" />
-                    <TextBlock x:Name="DateText" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <Button x:Name="Next" Grid.Column="2" Content="&#xE76C;" FontFamily="{StaticResource SymbolThemeFontFamily}" Click="OnNext" />
-                </Grid>
+                    <!-- Total + bar chart (the chart grid is filled in from code so it scales with the window) -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel Spacing="4">
+                            <TextBlock x:Name="TotalLabel" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                            <TextBlock x:Name="TotalText" Style="{StaticResource TitleLargeTextBlockStyle}" />
+                            <Grid x:Name="Chart" Margin="0,16,0,0" />
+                            <TextBlock x:Name="PeakText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                        </StackPanel>
+                    </Border>
 
-                <!-- Total + bar chart -->
-                <Border Style="{StaticResource Card}">
-                    <StackPanel Spacing="4">
-                        <TextBlock x:Name="TotalLabel" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
-                        <TextBlock x:Name="TotalText" Style="{StaticResource TitleLargeTextBlockStyle}" />
-                        <ItemsControl x:Name="Chart" Margin="0,16,0,0">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="2" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="local:Bar">
-                                    <StackPanel Width="{x:Bind Width}">
-                                        <Grid Height="140">
-                                            <Border Height="{x:Bind Height}" VerticalAlignment="Bottom" CornerRadius="3,3,0,0"
-                                                    Margin="2,0" Background="{ThemeResource AccentFillColorDefaultBrush}" />
-                                        </Grid>
-                                        <TextBlock Text="{x:Bind Label}" FontSize="11" Opacity="0.7" HorizontalAlignment="Center" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <TextBlock x:Name="PeakText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
-                    </StackPanel>
-                </Border>
+                    <!-- Timeline: one horizontal lane per app (Day view only) -->
+                    <Border x:Name="TimelineCard" Style="{StaticResource Card}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="TIMELINE" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
 
-                <!-- Timeline: one horizontal lane per app (Day view only) -->
-                <Border x:Name="TimelineCard" Style="{StaticResource Card}">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="TIMELINE" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                            <Grid x:Name="TimelineBody">
+                                <StackPanel Spacing="8">
+                                    <Grid x:Name="Axis" Margin="182,0,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="Ax0" FontSize="11" Opacity="0.7" />
+                                        <TextBlock x:Name="Ax1" Grid.Column="1" FontSize="11" Opacity="0.7" />
+                                        <TextBlock x:Name="Ax2" Grid.Column="2" FontSize="11" Opacity="0.7" />
+                                        <TextBlock x:Name="Ax3" Grid.Column="3" FontSize="11" Opacity="0.7" />
+                                    </Grid>
+                                    <StackPanel x:Name="Lanes" Spacing="4" />
+                                </StackPanel>
 
-                        <Grid x:Name="TimelineBody">
-                            <StackPanel Spacing="8">
-                                <Grid x:Name="Axis" Margin="182,0,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="Ax0" FontSize="11" Opacity="0.7" />
-                                    <TextBlock x:Name="Ax1" Grid.Column="1" FontSize="11" Opacity="0.7" />
-                                    <TextBlock x:Name="Ax2" Grid.Column="2" FontSize="11" Opacity="0.7" />
-                                    <TextBlock x:Name="Ax3" Grid.Column="3" FontSize="11" Opacity="0.7" />
-                                </Grid>
-                                <StackPanel x:Name="Lanes" Spacing="4" />
-                            </StackPanel>
+                                <!-- Drag this divider left or right to give long app names more room -->
+                                <local:ResizeHandle x:Name="Handle" Width="10" HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                                                    Margin="171,0,0,0" Background="Transparent"
+                                                    PointerPressed="OnHandleDown" PointerMoved="OnHandleMove"
+                                                    PointerReleased="OnHandleUp" PointerCanceled="OnHandleUp" />
+                            </Grid>
 
-                            <!-- Drag this divider left or right to give long app names more room -->
-                            <local:ResizeHandle x:Name="Handle" Width="10" HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                                                Margin="171,0,0,0" Background="Transparent"
-                                                PointerPressed="OnHandleDown" PointerMoved="OnHandleMove"
-                                                PointerReleased="OnHandleUp" PointerCanceled="OnHandleUp" />
-                        </Grid>
-
-                        <TextBlock x:Name="LaneHint" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                            <TextBlock x:Name="LaneHint" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
         </ScrollViewer>
 
         <!-- Hover card shown above the pointer while it is over a lane -->

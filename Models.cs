@@ -37,10 +37,6 @@ public class Settings
     public double LabelWidth { get; set; } = 170;   // width of the app-name column in the timeline
 }
 
-// ---- view models (plain records, bound with x:Bind) ----------------------------------
-
-public record Bar(double Height, double Width, string Label);
-
 // ---- small helpers -----------------------------------------------------------------
 
 public static class Ui

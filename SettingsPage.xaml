@@ -1,0 +1,34 @@
+<Page
+    x:Class="ScreenTime.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <Grid Padding="32,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MaxWidth="800" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Spacing="16">
+                <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" />
+
+                <Border Style="{StaticResource Card}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="24-hour time" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock Text="Show times like 14:30 instead of 2:30 PM" Opacity="0.7"
+                                       Style="{StaticResource CaptionTextBlockStyle}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="Hour24Toggle" Grid.Column="1" MinWidth="0" OnContent="On" OffContent="Off"
+                                      Toggled="OnHour24" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>
