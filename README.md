@@ -16,7 +16,7 @@ A WinUI 3 take on iOS Screen Time: activity charts, pickups, most-used apps, Dow
 
 Windows has no public screen-time API, so usage comes from sampling the foreground window once a second (`GetForegroundWindow` through the CsWin32 source generator, so no hand-written P/Invoke).
 
-Data lives in `%LOCALAPPDATA%\ScreenTime`: `settings.json` plus one `yyyy-MM-dd.json` per day.
+Data lives in `%LOCALAPPDATA%\ScreenTime`: `settings.json` plus one `yyyy-MM-dd.json` per day. Any error is appended to `crash.log` in the same folder.
 
 ## Install (nothing to install)
 

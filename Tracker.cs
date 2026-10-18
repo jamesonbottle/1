@@ -12,8 +12,6 @@ namespace ScreenTime;
 /// <summary>Samples the foreground app once a second, stores usage per hour, and enforces limits / downtime.</summary>
 public sealed class Tracker
 {
-    public static Tracker Instance { get; } = new();
-
     static readonly TimeSpan IdleLimit = TimeSpan.FromMinutes(5);   // no input for this long = screen not in use
     static readonly string Dir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ScreenTime");
@@ -26,6 +24,10 @@ public sealed class Tracker
         "explorer", "ShellExperienceHost", "StartMenuExperienceHost", "SearchHost", "LockApp",
         "LogonUI", "TextInputHost", "ApplicationFrameHost", "dwm", "ScreenTime",
     };
+
+    // Must stay BELOW the static fields above: static initializers run top to bottom, and the
+    // constructor reads Dir / SettingsFile. Declared first, it crashed the app on startup.
+    public static Tracker Instance { get; } = new();
 
     readonly Dictionary<DateOnly, DayData> _past = new();
     readonly HashSet<string> _notified = new();
@@ -73,7 +75,14 @@ public sealed class Tracker
 
     // ---- the one-second loop ----------------------------------------------------------
 
+    // A bad sample (process exited mid-read, access denied...) must never take the app down.
     void Tick()
+    {
+        try { TickCore(); }
+        catch (Exception ex) { Diag.Log(ex); }
+    }
+
+    void TickCore()
     {
         var now = DateTime.Now;
         var date = DateOnly.FromDateTime(now);

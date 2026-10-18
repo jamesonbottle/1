@@ -8,10 +8,10 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <NavigationView PaneDisplayMode="Left" IsBackButtonVisible="Collapsed" IsSettingsVisible="False"
+    <NavigationView x:Name="Nav" PaneDisplayMode="Left" IsBackButtonVisible="Collapsed" IsSettingsVisible="False"
                     OpenPaneLength="220" SelectionChanged="OnNav">
         <NavigationView.MenuItems>
-            <NavigationViewItem Content="All Activity" Tag="ScreenTime.ActivityPage" IsSelected="True">
+            <NavigationViewItem Content="All Activity" Tag="ScreenTime.ActivityPage">
                 <NavigationViewItem.Icon><SymbolIcon Symbol="Calendar" /></NavigationViewItem.Icon>
             </NavigationViewItem>
             <NavigationViewItem Content="Downtime" Tag="ScreenTime.DowntimePage">
