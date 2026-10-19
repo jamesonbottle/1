@@ -26,14 +26,12 @@ public sealed partial class ActivityPage : Page
     readonly Tracker _t = Tracker.Instance;
     readonly List<Lane> _lanes = new();
     DayData? _shown;   // the day the timeline is currently drawing
-    bool _week;
-    int _offset;   // 0 = today / this week, -1 = previous, ...
+    int _offset;   // 0 = today, -1 = yesterday, ...
 
     double _labelWidth;
     bool _dragging;
     double _dragStartX, _dragStartWidth;
 
-    bool _suppressRange;      // true while we change Day/Week from code, so OnRange doesn't reset the date
     string _stripKey = "";    // what the day buttons currently show; they're only rebuilt when this changes
 
     sealed record Lane(string Key, Canvas Canvas, Grid Row);
@@ -41,19 +39,11 @@ public sealed partial class ActivityPage : Page
     public ActivityPage()
     {
         InitializeComponent();
-        NavigationCacheMode = NavigationCacheMode.Required;   // keep Day/Week and the date when switching to Settings and back
+        NavigationCacheMode = NavigationCacheMode.Required;   // keep the chosen date when switching to Settings and back
         _labelWidth = Math.Max(MinLabelWidth, _t.Settings.LabelWidth);
         ApplyLabelWidth();
         Loaded += (_, _) => { _t.Changed += Refresh; Refresh(); };
         Unloaded += (_, _) => _t.Changed -= Refresh;
-    }
-
-    void OnRange(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
-    {
-        if (!IsLoaded || _suppressRange) return;
-        _week = sender.SelectedItem == WeekItem;
-        _offset = 0;
-        Refresh();
     }
 
     void OnPrev(object sender, RoutedEventArgs e) { _offset--; Refresh(); }
@@ -61,35 +51,20 @@ public sealed partial class ActivityPage : Page
 
     // ---- day buttons: click a day to see what you were doing then ------------------------
 
-    /// <summary>Jump to a single day. From the Week view this also switches to the Day view.</summary>
+    /// <summary>Jump to a single day.</summary>
     void SelectDay(DateOnly day)
     {
         _offset = day.DayNumber - DateOnly.FromDateTime(DateTime.Now).DayNumber;
-        if (_week)
-        {
-            _week = false;
-            _suppressRange = true;
-            Range.SelectedItem = DayItem;
-            _suppressRange = false;
-        }
         Refresh();
     }
 
-    // Day view: the 7 days ending today (or, if you've gone further back, the 7 days starting at the selected one).
-    // Week view: the 7 days of the shown week; clicking one opens that day.
-    void UpdateDayStrip(DateOnly today, DateOnly first)
+    // The 7 days ending today (or, if you've gone further back, the 7 days ending 6 days after the selected one).
+    void UpdateDayStrip(DateOnly today)
     {
-        DateOnly start;
-        DateOnly? selected = null;
-        if (_week) start = first;
-        else
-        {
-            var sel = today.AddDays(_offset);
-            selected = sel;
-            start = (_offset >= -6 ? today : sel.AddDays(6)).AddDays(-6);
-        }
+        var selected = today.AddDays(_offset);
+        var start = (_offset >= -6 ? today : selected.AddDays(6)).AddDays(-6);
 
-        string key = $"{start.DayNumber}|{selected?.DayNumber}|{today.DayNumber}|{_week}";
+        string key = $"{start.DayNumber}|{selected.DayNumber}|{today.DayNumber}";
         if (key == _stripKey) return;   // Refresh runs every second; rebuilding would swallow clicks
         _stripKey = key;
 
@@ -122,26 +97,20 @@ public sealed partial class ActivityPage : Page
         }
     }
 
-    static DateOnly Monday(DateOnly d) => d.AddDays(-(((int)d.DayOfWeek + 6) % 7));
-
     void Refresh()
     {
         var today = DateOnly.FromDateTime(DateTime.Now);
-        var first = _week ? Monday(today).AddDays(7 * _offset) : today.AddDays(_offset);
+        var day = today.AddDays(_offset);
 
-        UpdateDayStrip(today, first);
+        UpdateDayStrip(today);
         Next.IsEnabled = _offset < 0;
-        DateText.Text = _week
-            ? $"{first:MMM d} – {first.AddDays(6):MMM d}"
-            : first == today ? $"Today, {first:MMM d}" : $"{first:dddd, MMM d}";
+        DateText.Text = day == today ? $"Today, {day:MMM d}" : $"{day:dddd, MMM d}";
 
         // Hour labels follow the 12 / 24 hour setting.
         var hourLabels = Ui.AxisLabels();
         Ax0.Text = hourLabels[0]; Ax1.Text = hourLabels[1]; Ax2.Text = hourLabels[2]; Ax3.Text = hourLabels[3];
 
-        // Timeline lanes only make sense for a single day.
-        TimelineCard.Visibility = _week ? Visibility.Collapsed : Visibility.Visible;
-        if (!_week) UpdateLanes(_t.Get(first));
+        UpdateLanes(_t.Get(day));
     }
 
     // ---- timeline: one horizontal lane per app ------------------------------------------

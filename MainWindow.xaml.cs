@@ -36,8 +36,6 @@ public sealed partial class MainWindow : Window
 
     public void ShowFromTray() => _tray.Show();
 
-    void OnPaneToggle(TitleBar sender, object args) => Nav.IsPaneOpen = !Nav.IsPaneOpen;
-
     void OnNav(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         if (Host is null) return;

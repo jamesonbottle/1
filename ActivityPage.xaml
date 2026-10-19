@@ -23,11 +23,6 @@
                 <StackPanel Spacing="16">
                     <TextBlock Text="Time Track" Style="{StaticResource TitleTextBlockStyle}" />
 
-                    <SelectorBar x:Name="Range" HorizontalAlignment="Left" SelectionChanged="OnRange">
-                        <SelectorBarItem x:Name="DayItem" Text="Day" IsSelected="True" />
-                        <SelectorBarItem x:Name="WeekItem" Text="Week" />
-                    </SelectorBar>
-
                     <!-- Clickable days (filled in from code): pick yesterday, the day before, etc. -->
                     <Grid x:Name="DayStrip" ColumnSpacing="4" />
 

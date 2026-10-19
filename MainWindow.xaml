@@ -16,13 +16,13 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- The three-line (hamburger) button collapses the left pane to icons and expands it again. -->
         <TitleBar x:Name="AppTitleBar" Title="Screen Time"
-                  IsBackButtonVisible="False" IsPaneToggleButtonVisible="True"
-                  PaneToggleRequested="OnPaneToggle" />
+                  IsBackButtonVisible="False" IsPaneToggleButtonVisible="False" />
 
+        <!-- The three-line (hamburger) button lives at the top of the left pane itself, not in the title bar.
+             It collapses the pane to icons and expands it again. -->
         <NavigationView x:Name="Nav" Grid.Row="1" PaneDisplayMode="Left" OpenPaneLength="220"
-                        IsBackButtonVisible="Collapsed" IsPaneToggleButtonVisible="False" IsSettingsVisible="True"
+                        IsBackButtonVisible="Collapsed" IsPaneToggleButtonVisible="True" IsSettingsVisible="True"
                         SelectionChanged="OnNav">
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Time Track">

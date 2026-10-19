@@ -6,13 +6,13 @@ A small WinUI 3 time tracker: how long you spent on screen, split by hour or day
 
 | Section | What you get | Built from |
 |---|---|---|
-| Time Track (Day / Week) | Day / Week switch and date navigation | `SelectorBar` |
-| Day buttons | Click a day (Today, Yesterday, ...) to see what you were doing then. In the Week view they open that day | `Button` row |
-| Timeline (Day only) | One horizontal line per app. Solid = app in front, light = open in the background. Overlapping apps show up on separate lines, with a separator after the app names | `Canvas` + `Rectangle`s |
+| Time Track | One day at a time, with previous / next arrows | `Button`s |
+| Day buttons | Click a day (Today, Yesterday, ...) to see what you were doing then | `Button` row |
+| Timeline | One horizontal line per app. Solid = app in front, light = open in the background. Overlapping apps show up on separate lines, with a separator after the app names | `Canvas` + `Rectangle`s |
 | Hover card | Hover a lane to see the exact time under the cursor, plus the start, end and length of the bar you're on | a `Border` on a `Canvas` overlay |
 | Resizable names | Drag the divider between the app names and the lanes to fit long names | a custom `ResizeHandle` strip |
 | Settings (left pane) | 24-hour or 12-hour time. Defaults to your system's clock format | `NavigationView` + `ToggleSwitch` |
-| Pane toggle | The three-line button in the title bar collapses the left pane to icons and expands it again | `TitleBar` pane toggle |
+| Pane toggle | The three-line button at the top of the left pane collapses it to icons and expands it again | `NavigationView` pane toggle |
 
 Windows has no public screen-time API, so usage comes from sampling:
 
