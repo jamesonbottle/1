@@ -43,16 +43,6 @@
                         <Button x:Name="Next" Grid.Column="2" Content="&#xE76C;" FontFamily="{StaticResource SymbolThemeFontFamily}" Click="OnNext" />
                     </Grid>
 
-                    <!-- Total + bar chart (the chart grid is filled in from code so it scales with the window) -->
-                    <Border Style="{StaticResource Card}">
-                        <StackPanel Spacing="4">
-                            <TextBlock x:Name="TotalLabel" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
-                            <TextBlock x:Name="TotalText" Style="{StaticResource TitleLargeTextBlockStyle}" />
-                            <Grid x:Name="Chart" Margin="0,16,0,0" />
-                            <TextBlock x:Name="PeakText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
-                        </StackPanel>
-                    </Border>
-
                     <!-- Timeline: one horizontal lane per app (Day view only) -->
                     <Border x:Name="TimelineCard" Style="{StaticResource Card}">
                         <StackPanel Spacing="8">

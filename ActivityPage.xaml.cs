@@ -18,7 +18,6 @@ public sealed class ResizeHandle : Grid
 
 public sealed partial class ActivityPage : Page
 {
-    const double ChartHeight = 140;
     const double LaneHeight = 28, BarHeight = 12;
     const double LaneGap = 12;                 // spacing between the name column and the lanes
     const double MinLabelWidth = 90;
@@ -36,10 +35,6 @@ public sealed partial class ActivityPage : Page
 
     bool _suppressRange;      // true while we change Day/Week from code, so OnRange doesn't reset the date
     string _stripKey = "";    // what the day buttons currently show; they're only rebuilt when this changes
-
-    // Bar chart pieces, rebuilt only when the number of bars changes (24 hours <-> 7 days).
-    Border[] _bars = Array.Empty<Border>();
-    TextBlock?[] _barLabels = Array.Empty<TextBlock?>();
 
     sealed record Lane(string Key, Canvas Canvas, Grid Row);
 
@@ -133,8 +128,6 @@ public sealed partial class ActivityPage : Page
     {
         var today = DateOnly.FromDateTime(DateTime.Now);
         var first = _week ? Monday(today).AddDays(7 * _offset) : today.AddDays(_offset);
-        var days = Enumerable.Range(0, _week ? 7 : 1).Select(i => _t.Get(first.AddDays(i))).ToList();
-        int elapsed = Math.Max(1, Enumerable.Range(0, days.Count).Count(i => first.AddDays(i) <= today));
 
         UpdateDayStrip(today, first);
         Next.IsEnabled = _offset < 0;
@@ -142,75 +135,13 @@ public sealed partial class ActivityPage : Page
             ? $"{first:MMM d} – {first.AddDays(6):MMM d}"
             : first == today ? $"Today, {first:MMM d}" : $"{first:dddd, MMM d}";
 
-        int total = days.Sum(d => d.Total);
-        TotalLabel.Text = _week ? "DAILY AVERAGE" : "SCREEN TIME";
-        TotalText.Text = Ui.Time(_week ? total / elapsed : total);
-
         // Hour labels follow the 12 / 24 hour setting.
         var hourLabels = Ui.AxisLabels();
         Ax0.Text = hourLabels[0]; Ax1.Text = hourLabels[1]; Ax2.Text = hourLabels[2]; Ax3.Text = hourLabels[3];
 
-        // Bar chart: 24 hours for Day, 7 days for Week.
-        var values = _week ? days.Select(d => d.Total).ToArray() : days[0].ByHour();
-        int max = Math.Max(1, values.Max());
-        EnsureChart(values.Length);
-        for (int i = 0; i < values.Length; i++)
-        {
-            _bars[i].Height = values[i] == 0 ? 0 : Math.Max(3, ChartHeight * values[i] / max);
-            if (_barLabels[i] is { } label)
-                label.Text = _week ? first.AddDays(i).ToString("ddd") : hourLabels[i / 6];
-        }
-        PeakText.Text = values.Max() > 0 ? $"Peak {Ui.Time(values.Max())}" : "";
-
         // Timeline lanes only make sense for a single day.
         TimelineCard.Visibility = _week ? Visibility.Collapsed : Visibility.Visible;
-        if (!_week) UpdateLanes(days[0]);
-    }
-
-    // ---- bar chart: equal-width columns, so it scales with the window instead of overflowing ----
-
-    void EnsureChart(int n)
-    {
-        if (_bars.Length == n) return;
-
-        Chart.Children.Clear();
-        Chart.ColumnDefinitions.Clear();
-        Chart.RowDefinitions.Clear();
-        Chart.RowDefinitions.Add(new RowDefinition { Height = new GridLength(ChartHeight) });   // bars
-        Chart.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });               // labels
-
-        var fill = (Brush)Resources["LaneBrush"];
-        _bars = new Border[n];
-        _barLabels = new TextBlock?[n];
-        for (int i = 0; i < n; i++)
-        {
-            Chart.ColumnDefinitions.Add(new ColumnDefinition());   // default width is 1*, so all columns are equal
-
-            var bar = new Border
-            {
-                VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(1, 0, 1, 0),
-                CornerRadius = new CornerRadius(3, 3, 0, 0),
-                Background = fill,
-            };
-            Grid.SetColumn(bar, i);
-            Chart.Children.Add(bar);
-            _bars[i] = bar;
-
-            // Week: a label under every bar. Day: a label every 6 hours, spanning 6 columns so wide text like "18:00" fits.
-            bool labelled = n <= 7 || i % 6 == 0;
-            if (!labelled) continue;
-            var label = new TextBlock
-            {
-                FontSize = 11, Opacity = 0.7, TextWrapping = TextWrapping.NoWrap,
-                HorizontalAlignment = n <= 7 ? HorizontalAlignment.Center : HorizontalAlignment.Left,
-            };
-            Grid.SetRow(label, 1);
-            Grid.SetColumn(label, i);
-            if (n > 7) Grid.SetColumnSpan(label, 6);
-            Chart.Children.Add(label);
-            _barLabels[i] = label;
-        }
+        if (!_week) UpdateLanes(_t.Get(first));
     }
 
     // ---- timeline: one horizontal lane per app ------------------------------------------
