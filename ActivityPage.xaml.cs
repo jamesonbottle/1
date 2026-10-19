@@ -18,7 +18,7 @@ public sealed class ResizeHandle : Grid
 
 public sealed partial class ActivityPage : Page
 {
-    const double LaneHeight = 28, BarHeight = 12;
+    const double LaneHeight = 36, BarHeight = 12;   // 36 + the 4px StackPanel spacing = 40px per row, like the Settings nav list
     const double LaneGap = 12;                 // spacing between the name column and the lanes
     const double MinLabelWidth = 90;
     const int DaySeconds = 86400;
