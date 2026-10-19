@@ -35,6 +35,8 @@ public class Settings
     public bool Use24Hour { get; set; } = CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern.Contains('H');
 
     public double LabelWidth { get; set; } = 170;   // width of the app-name column in the timeline
+
+    public bool PaneOpen { get; set; } = true;      // left pane expanded (true) or collapsed to icons (false)
 }
 
 // ---- small helpers -----------------------------------------------------------------

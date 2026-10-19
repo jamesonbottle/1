@@ -25,9 +25,15 @@
                         <TextBlock Text="Time Track" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" />
 
                         <!-- Calendar: jump to any date. Sits above the Today button (the last day button). -->
-                        <Button HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Content="&#xE787;" FontFamily="{StaticResource SymbolThemeFontFamily}"
+                        <!-- Square (32x32, no padding) with the native Calendar symbol, nudged down a little
+                             (RenderTransform, so nothing else shifts) to sit closer to the Today button. -->
+                        <Button Width="32" Height="32" MinWidth="32" Padding="0"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
                                 ToolTipService.ToolTip="Pick a date">
+                            <SymbolIcon Symbol="Calendar" />
+                            <Button.RenderTransform>
+                                <TranslateTransform Y="8" />
+                            </Button.RenderTransform>
                             <Button.Flyout>
                                 <Flyout x:Name="PickerFlyout" Placement="BottomEdgeAlignedRight" Opening="OnPickerOpening">
                                     <CalendarView x:Name="Picker" SelectionMode="Single" SelectedDatesChanged="OnPickDate" />
