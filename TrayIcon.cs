@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -35,9 +36,6 @@ sealed class TrayIcon
         _proc = WndProc;
         PInvoke.SetWindowSubclass(_hwnd, _proc, 1, 0);
 
-        var icon = PInvoke.LoadImage(HINSTANCE.Null, Path.Combine(AppContext.BaseDirectory, "app.ico"),
-            GDI_IMAGE_TYPE.IMAGE_ICON, 0, 0, IMAGE_FLAGS.LR_LOADFROMFILE | IMAGE_FLAGS.LR_DEFAULTSIZE);
-
         _nid = new NOTIFYICONDATAW
         {
             cbSize = NidSize(),
@@ -45,13 +43,34 @@ sealed class TrayIcon
             uID = 1,
             uFlags = NOTIFY_ICON_DATA_FLAGS.NIF_MESSAGE | NOTIFY_ICON_DATA_FLAGS.NIF_ICON | NOTIFY_ICON_DATA_FLAGS.NIF_TIP,
             uCallbackMessage = WM_TRAY,
-            hIcon = new HICON(icon.Value),
+            hIcon = LoadAppIcon(),
         };
-        "Screen Time".AsSpan().CopyTo(_nid.szTip);
+
+        // szTip is a fixed 128-char buffer; view it as a span so we can copy the tooltip text in.
+        var tip = MemoryMarshal.CreateSpan(ref Unsafe.As<__char_128, char>(ref _nid.szTip), 128);
+        "Screen Time".AsSpan().CopyTo(tip);
+
         PInvoke.Shell_NotifyIcon(NOTIFY_ICON_MESSAGE.NIM_ADD, _nid);
     }
 
     static uint NidSize() { unsafe { return (uint)sizeof(NOTIFYICONDATAW); } }
+
+    // Loads app.ico (copied next to the exe) straight from disk.
+    static unsafe HICON LoadAppIcon()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "app.ico");
+        fixed (char* p = path)
+        {
+            var h = PInvoke.LoadImage(HINSTANCE.Null, new PCWSTR(p), GDI_IMAGE_TYPE.IMAGE_ICON, 0, 0,
+                IMAGE_FLAGS.LR_LOADFROMFILE | IMAGE_FLAGS.LR_DEFAULTSIZE);
+            return new HICON(h.Value);
+        }
+    }
+
+    static unsafe void AddItem(HMENU menu, uint id, string text)
+    {
+        fixed (char* p = text) PInvoke.AppendMenu(menu, MENU_ITEM_FLAGS.MF_STRING, id, new PCWSTR(p));
+    }
 
     public void Show()
     {
@@ -78,15 +97,15 @@ sealed class TrayIcon
 
     unsafe void ShowMenu()
     {
-        using var menu = PInvoke.CreatePopupMenu();
-        PInvoke.AppendMenu(menu, MENU_ITEM_FLAGS.MF_STRING, CmdOpen, "Open Screen Time");
-        PInvoke.AppendMenu(menu, MENU_ITEM_FLAGS.MF_STRING, CmdExit, "Exit");
+        var menu = PInvoke.CreatePopupMenu();
+        AddItem(menu, CmdOpen, "Open Screen Time");
+        AddItem(menu, CmdExit, "Exit");
 
         PInvoke.GetCursorPos(out var pt);
         PInvoke.SetForegroundWindow(_hwnd);   // without this the menu doesn't close when you click elsewhere
-        int cmd = PInvoke.TrackPopupMenuEx(menu,
-            (uint)(TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD | TRACK_POPUP_MENU_FLAGS.TPM_RIGHTBUTTON),
-            pt.X, pt.Y, _hwnd, null).Value;
+        const uint TPM_RIGHTBUTTON = 0x0002, TPM_RETURNCMD = 0x0100;   // return the chosen command instead of posting it
+        int cmd = PInvoke.TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, pt.X, pt.Y, _hwnd, null).Value;
+        PInvoke.DestroyMenu(menu);
 
         if (cmd == CmdOpen) Show();
         else if (cmd == CmdExit) Exit();
