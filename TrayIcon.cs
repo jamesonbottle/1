@@ -19,6 +19,8 @@ sealed class TrayIcon
 {
     const uint WM_TRAY = 0x8001;                       // WM_APP + 1: the shell posts this to our window for mouse events on the icon
     const int WM_LBUTTONUP = 0x0202, WM_RBUTTONUP = 0x0205;
+    const uint WM_SYSCOMMAND = 0x0112;
+    const nuint SC_MINIMIZE = 0xF020;                  // the low 4 bits of a WM_SYSCOMMAND wParam are used by Windows, so mask them off
     const uint CmdOpen = 1, CmdExit = 2;
 
     readonly Window _window;
@@ -75,7 +77,8 @@ sealed class TrayIcon
     public void Show()
     {
         _window.AppWindow.Show();
-        (_window.AppWindow.Presenter as OverlappedPresenter)?.Restore();   // un-minimize if needed
+        // Only restore a minimized window; Restore() on a maximized one would shrink it back to its normal size.
+        if (_window.AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized } p) p.Restore();
         _window.Activate();
     }
 
@@ -83,6 +86,14 @@ sealed class TrayIcon
 
     LRESULT WndProc(HWND hWnd, uint msg, WPARAM wParam, LPARAM lParam, nuint id, nuint data)
     {
+        // The minimize button (and a taskbar click on the active window) send SC_MINIMIZE. Treat it like the X button:
+        // hide to the tray instead of minimizing to the taskbar.
+        if (msg == WM_SYSCOMMAND && (wParam.Value & 0xFFF0) == SC_MINIMIZE)
+        {
+            _window.AppWindow.Hide();
+            return new LRESULT(0);
+        }
+
         if (msg == WM_TRAY)
         {
             switch ((int)lParam.Value & 0xFFFF)   // the mouse message is in the low word

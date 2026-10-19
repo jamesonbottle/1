@@ -8,6 +8,7 @@ A small WinUI 3 time tracker: how long you spent on screen, split by hour or day
 |---|---|---|
 | Time Track | One day at a time, with previous / next arrows | `Button`s |
 | Day buttons | Click a day (Today, Yesterday, ...) to see what you were doing then | `Button` row |
+| Calendar button | The calendar icon at the top right (above Today) opens a date picker to jump to any earlier day | `Flyout` + `CalendarView` |
 | Timeline | One horizontal line per app. Solid = app in front, light = open in the background. Overlapping apps show up on separate lines, with a separator after the app names | `Canvas` + `Rectangle`s |
 | Hover card | Hover a lane to see the exact time under the cursor, plus the start, end and length of the bar you're on | a `Border` on a `Canvas` overlay |
 | Resizable names | Drag the divider between the app names and the lanes to fit long names | a custom `ResizeHandle` strip |
@@ -33,7 +34,7 @@ Needs only Windows 10 1809+ or Windows 11. The .NET runtime and Windows App SDK 
 2. Unzip anywhere.
 3. Run `ScreenTime.exe`.
 
-Closing the window hides it to the tray (notification area) and tracking keeps running. Left-click the tray icon to reopen the window; right-click it for **Open** / **Exit**. Only one copy runs at a time: launching it again just reopens the window of the running copy.
+Closing or minimizing the window hides it to the tray (notification area) instead of the taskbar, and tracking keeps running. Left-click the tray icon to reopen the window; right-click it for **Open** / **Exit**. Only one copy runs at a time: launching it again just reopens the window of the running copy.
 
 To cut a release, push a tag: `git tag v1.0 && git push origin v1.0`.
 

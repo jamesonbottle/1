@@ -21,7 +21,20 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Spacing="16">
-                    <TextBlock Text="Time Track" Style="{StaticResource TitleTextBlockStyle}" />
+                    <Grid>
+                        <TextBlock Text="Time Track" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" />
+
+                        <!-- Calendar: jump to any date. Sits above the Today button (the last day button). -->
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Content="&#xE787;" FontFamily="{StaticResource SymbolThemeFontFamily}"
+                                ToolTipService.ToolTip="Pick a date">
+                            <Button.Flyout>
+                                <Flyout x:Name="PickerFlyout" Placement="BottomEdgeAlignedRight" Opening="OnPickerOpening">
+                                    <CalendarView x:Name="Picker" SelectionMode="Single" SelectedDatesChanged="OnPickDate" />
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </Grid>
 
                     <!-- Clickable days (filled in from code): pick yesterday, the day before, etc. -->
                     <Grid x:Name="DayStrip" ColumnSpacing="4" />

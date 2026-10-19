@@ -33,6 +33,7 @@ public sealed partial class ActivityPage : Page
     double _dragStartX, _dragStartWidth;
 
     string _stripKey = "";    // what the day buttons currently show; they're only rebuilt when this changes
+    bool _pickerSync;         // true while we set the calendar's selection from code, so OnPickDate ignores it
 
     sealed record Lane(string Key, Canvas Canvas, Grid Row);
 
@@ -56,6 +57,33 @@ public sealed partial class ActivityPage : Page
     {
         _offset = day.DayNumber - DateOnly.FromDateTime(DateTime.Now).DayNumber;
         Refresh();
+    }
+
+    // ---- calendar button: pick any date ----------------------------------------------------
+
+    static DateTimeOffset Midnight(DateOnly d) => new(d.ToDateTime(TimeOnly.MinValue));
+
+    // Refresh the calendar each time it opens: today moves on, and the selection may have changed via the day buttons.
+    void OnPickerOpening(object? sender, object e)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var selected = Midnight(today.AddDays(_offset));
+
+        _pickerSync = true;
+        Picker.MaxDate = Midnight(today);   // can't open the future
+        Picker.SelectedDates.Clear();
+        Picker.SelectedDates.Add(selected);
+        Picker.SetDisplayDate(selected);
+        _pickerSync = false;
+    }
+
+    void OnPickDate(CalendarView sender, CalendarViewSelectedDatesChangedEventArgs args)
+    {
+        if (_pickerSync || args.AddedDates.Count == 0) return;
+        var picked = DateOnly.FromDateTime(args.AddedDates[0].Date);
+        if (picked == DateOnly.FromDateTime(DateTime.Now).AddDays(_offset)) return;   // already showing this day (also ignores a late echo of our own selection)
+        SelectDay(picked);
+        PickerFlyout.Hide();
     }
 
     // The 7 days ending today (or, if you've gone further back, the 7 days ending 6 days after the selected one).
