@@ -4,6 +4,9 @@ namespace ScreenTime;
 
 public partial class App : Application
 {
+    MainWindow? _window;
+    Mutex? _mutex;   // held for the whole process lifetime
+
     public App()
     {
         InitializeComponent();
@@ -14,7 +17,20 @@ public partial class App : Application
     {
         try
         {
-            new MainWindow().Activate();
+            // One instance only. Closing the window just hides it to the tray, so a second launch would
+            // run a second tracker and double-count. Instead, ask the running copy to show its window.
+            _mutex = new Mutex(true, "ScreenTime.SingleInstance", out bool first);
+            var show = new EventWaitHandle(false, EventResetMode.AutoReset, "ScreenTime.Show");
+            if (!first)
+            {
+                show.Set();
+                Environment.Exit(0);
+            }
+
+            _window = new MainWindow();
+            _window.Activate();
+            ThreadPool.RegisterWaitForSingleObject(show,
+                (_, _) => _window.DispatcherQueue.TryEnqueue(_window.ShowFromTray), null, Timeout.Infinite, false);
             Tracker.Instance.Start();
         }
         catch (Exception ex)

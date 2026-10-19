@@ -28,11 +28,11 @@ Days recorded before the timeline existed only have the hourly totals, so their 
 
 Needs only Windows 10 1809+ or Windows 11. The .NET runtime and Windows App SDK are bundled, and the app is unpackaged (no MSIX, no certificate, no Store).
 
-1. Download `ScreenTime-win-x64.zip` (or `win-arm64`) from the **Releases** page, or from the latest **Actions** run's artifacts.
+1. Download `ScreenTime-win-x64.zip` from the **Releases** page, or from the latest **Actions** run's artifacts.
 2. Unzip anywhere.
 3. Run `ScreenTime.exe`.
 
-The window must stay open (or minimized) for tracking.
+Closing the window hides it to the tray (notification area) and tracking keeps running. Left-click the tray icon to reopen the window; right-click it for **Open** / **Exit**. Only one copy runs at a time: launching it again just reopens the window of the running copy.
 
 To cut a release, push a tag: `git tag v1.0 && git push origin v1.0`.
 
@@ -50,4 +50,5 @@ CsWin32 is a build-time source generator only; it adds nothing to what the end u
 
 - Downtime, App Limits, Always Allowed, Most Used and Pickups (removed; this build only tracks and displays time)
 - Packaged-app (UWP) apps all show as "ApplicationFrameHost" and are not tracked
-- Tray icon / run at startup
+- Run at startup
+- The tray icon isn't re-added if Explorer restarts (reopen the app to get it back)
